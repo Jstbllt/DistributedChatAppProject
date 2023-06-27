@@ -59,10 +59,6 @@ public class Node {
     }
 
     public void receiveBroadcastMessage(Message message) {
-        VectorClock clock = new VectorClock();
-        clock.setClock(0, 2);
-        Message message1 = new Message(1, clock, "Message 3");
-        this.buffer.add(message1);
         this.buffer.add(message);
 
         while (!buffer.isEmpty() && canBeDelivered()){
