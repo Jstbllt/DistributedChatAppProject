@@ -5,12 +5,16 @@ public class LamportTimestamp {
         this.timestamp = 0;
     }
 
+    public int getTimestamp(){
+        return timestamp;
+    }
+
     public void increment() {
         timestamp++;
     }
 
     public void update(LamportTimestamp other) {
-        timestamp = Math.max(timestamp, other.timestamp);
+        timestamp = Math.max(timestamp, other.timestamp) + 1;
     }
 
     public LamportTimestamp copy() {

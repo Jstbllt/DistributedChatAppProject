@@ -6,6 +6,7 @@ public class Node {
     private MatrixClock matrixClock;
     private LamportTimestamp lamportTimestamp;
     private ArrayList<Message> delayedMessages;
+    private ArrayList<Message> delivered = new ArrayList<>();
     private Map<Integer, Node> neighbors;
 
     // Constructor
@@ -15,7 +16,7 @@ public class Node {
         this.vectorClock = new VectorClock(5);
         this.matrixClock = new MatrixClock(5);
         this.lamportTimestamp = new LamportTimestamp();
-        this.delayedMessages = new ArrayList<Message>();
+        this.delayedMessages = new ArrayList<>();
     }
 
     // Permits to add neighbors to the node network
@@ -152,8 +153,30 @@ public class Node {
 
     // RECEIVE PRIVATE MESSAGE
     public void receivePrivateMessage(Message message) {
-        lamportTimestamp.update(message.getLamportTimestamp());
-        System.out.println("Node " + nodeId + " received private message from Node " + message.getNodeId() +
-                ": " + message.getMessage() + " " + lamportTimestamp + " of Node " + nodeId);
+        if(delivered.isEmpty() ||
+                message.getLamportTimestamp().getTimestamp() == delivered.get(delivered.size()-1).getLamportTimestamp().getTimestamp() + 1) {
+
+            delivered.add(message);
+
+            lamportTimestamp.update(message.getLamportTimestamp());
+
+            System.out.println("Node " + nodeId + " received private message from Node " + message.getNodeId() +
+                    ": " + message.getMessage() + " " + lamportTimestamp + " of Node " + nodeId);
+
+            if(!delayedMessages.isEmpty()){
+                for (int i = 0 ; i < delayedMessages.size() ; i++) {
+                    Message m = delayedMessages.get(i);
+                    if (m.getLamportTimestamp().getTimestamp() == delivered.get(delivered.size()-1).getLamportTimestamp().getTimestamp() + 1) {
+                        delivered.add(m);
+                        lamportTimestamp.update(m.getLamportTimestamp());
+                        System.out.println("Node " + nodeId + " received private message from Node " + m.getNodeId() +
+                                ": " + m.getMessage() + " " + lamportTimestamp + " of Node " + nodeId);
+                        delayedMessages.remove(m);
+                    }
+                }
+            }
+        }
+        else
+            delayedMessages.add(message);
     }
 }
