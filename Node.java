@@ -35,19 +35,20 @@ public class Node {
     // SEND BROADCAST MESSAGE
     public void sendBroadcastMessage(String message) {
         // VECTOR CLOCK without causality PART --------------------------
-            /*vectorClock.increment(nodeId);
+        VectorClock deps = vectorClock.copy();
+        Message broadcastMessage = new Message(nodeId, deps, message);
 
-            Message broadcastMessage = new Message(nodeId, vectorClock, message);
+        System.out.printf("Node %d send broadcast message to all: %s " + vectorClock + "\n",
+                nodeId, broadcastMessage.getMessage());
 
-            System.out.printf("Node %d send broadcast message to all: %s " + vectorClock + "\n",
-                    nodeId, broadcastMessage.getMessage());
+        for (Node neighbor : neighbors.values()) {
+            neighbor.receiveBroadcastMessage(broadcastMessage);
+        }
 
-            for (Node neighbor : neighbors.values()) {
-                neighbor.receiveBroadcastMessage(broadcastMessage);
-            }*/
+        vectorClock.increment(nodeId);
 
         // MATRIX CLOCK with causality PART -----------------------------
-        matrixClock.increment(nodeId, nodeId);
+        /*matrixClock.increment(nodeId, nodeId);
 
         for (Node neighbor : neighbors.values()) {
             matrixClock.increment(nodeId, neighbor.nodeId);
@@ -60,38 +61,43 @@ public class Node {
 
         for (Node neighbor : neighbors.values()) {
             neighbor.receiveBroadcastMessage(broadcastMessage);
-        }
+        }*/
     }
 
     // RECEIVE BROADCAST MESSAGE
     public void receiveBroadcastMessage(Message message) {
         // VECTOR CLOCK without causality PART --------------------------
-            /*vectorClock.increment(nodeId);
-
-            for( int i = 0 ; i < vectorClock.getClock().length ; i++){
-                if(i + 1 != nodeId){
-                    vectorClock.setClock(i, Math.max(vectorClock.getClock()[i], message.getVectorClock().getClock()[i]));
-                }
-            }
-
+        /*if(checkVectorMessage(message)){
+            vectorClock.increment(message.getNodeId());
             System.out.println("Node " + nodeId + " received broadcast message from Node " + message.getNodeId() +
-                    ": " + message.getMessage() + " " + vectorClock);*/
-
-        // MATRIX CLOCK with causality PART -----------------------------
-        if(checkMessage(message)){
-            System.out.println("Message processed");
-            processMessage(message);
-
+                    ": " + message.getMessage() + " " + vectorClock);
 
             if(!delayedMessages.isEmpty())
             {
-                System.out.println("Entered if loop");
                 for (int i = 0 ; i < delayedMessages.size() ; i++) {
                     Message m = delayedMessages.get(i);
-                    System.out.println("Entered for loop");
-                    if (checkMessage(m)) {
-                        System.out.println("m checked");
-                        processMessage(m);
+                    if (checkVectorMessage(m)) {
+                        vectorClock.increment(m.getNodeId());
+                        System.out.println("Node " + nodeId + " received broadcast message from Node " + m.getNodeId() +
+                                ": " + m.getMessage() + " " + vectorClock);
+                        delayedMessages.remove(m);
+                    }
+                }
+            }
+        }
+        else
+            delayedMessages.add(message);*/
+
+        // MATRIX CLOCK with causality PART -----------------------------
+        if(checkMatrixMessage(message)){
+            processMatrixMessage(message);
+
+            if(!delayedMessages.isEmpty())
+            {
+                for (int i = 0 ; i < delayedMessages.size() ; i++) {
+                    Message m = delayedMessages.get(i);
+                    if (checkMatrixMessage(m)) {
+                        processMatrixMessage(m);
                         delayedMessages.remove(m);
                     }
                 }
@@ -103,7 +109,7 @@ public class Node {
     }
 
     // Check whether a message can be delivered or need to be delayed
-    private boolean checkMessage(Message message){
+    private boolean checkMatrixMessage(Message message){
         boolean toDeliver = false;
         if(message.getMatrixClock().getClock()[message.getNodeId()-1][nodeId-1] == (matrixClock.getClock()[message.getNodeId()-1][nodeId-1] + 1)){
             toDeliver = true;
@@ -120,8 +126,17 @@ public class Node {
         return toDeliver;
     }
 
+    private boolean checkVectorMessage(Message message){
+        for (int i = 0; i < message.getVectorClock().getClock().length; i++) {
+            if (message.getVectorClock().getClock()[i] > vectorClock.getClock()[i] + 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Process by delivering the message and updating clocks
-    private void processMessage(Message message){
+    private void processMatrixMessage(Message message){
         matrixClock.increment(nodeId, nodeId);
         matrixClock.increment(message.getNodeId(), nodeId);
 

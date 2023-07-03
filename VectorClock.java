@@ -25,6 +25,14 @@ public class VectorClock {
         this.clock[nodeId-1]++;
     }
 
+    public VectorClock copy() {
+        VectorClock copy = new VectorClock(clock.length);
+        for(int i = 0 ; i < copy.clock.length ; i++){
+            copy.clock[i] = clock[i];
+        }
+        return copy;
+    }
+
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
