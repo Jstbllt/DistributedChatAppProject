@@ -126,11 +126,9 @@ public class Node {
         matrixClock.increment(message.getNodeId(), nodeId);
 
         for( int i = 0 ; i < matrixClock.getClock().length ; i++){
-            if(i + 1 != nodeId && i + 1 != message.getNodeId()){
-                for( int j = 0 ; j < matrixClock.getClock().length ; j++){
-                    if(j + 1 != nodeId && j + 1 != message.getNodeId()){
-                        matrixClock.setClock(i,i, Math.max(matrixClock.getClock()[i][j], message.getMatrixClock().getClock()[i][j]));
-                    }
+            for( int j = 0 ; j < matrixClock.getClock().length ; j++){
+                if(!(i + 1 == nodeId && j + 1 == nodeId) && !(i + 1 == message.getNodeId() && j + 1 == nodeId)){
+                    matrixClock.setClock(i, j, Math.max(matrixClock.getClock()[i][j], message.getMatrixClock().getClock()[i][j]));
                 }
             }
         }
